@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{81c303ad-09b8-4924-9b42-5bbe44e46992}</ProjectGuid>
+    <SubObjectsSortedByName>True</SubObjectsSortedByName>
+    <DownloadApplicationInfo>true</DownloadApplicationInfo>
+    <WriteProductVersion>true</WriteProductVersion>
+    <GenerateTpy>false</GenerateTpy>
+    <Name>PLC</Name>
+    <ProgramVersion>3.1.4024.0</ProgramVersion>
+    <Application>{62d7c0d0-27ea-4c56-a018-9afa567c6db3}</Application>
+    <TypeSystem>{6857c618-616a-41e5-a769-56c50f5100e2}</TypeSystem>
+    <Implicit_Task_Info>{b5f8d211-5c5d-4c95-943c-0b790e1e2bcd}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{b42eb6f6-e6ac-4148-9a8f-7d0fcf1b3751}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{bda4be5a-79d3-448b-ad71-b9beaa32816c}</Implicit_Jitter_Distribution>
+    <LibraryReferences>{4254f5c4-4c42-4a2a-8200-b9f0e8f8929a}</LibraryReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_TcBSD_Backup.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_TcBSD_Sendmail.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_TcBSD_System.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DUTs" />
+    <Folder Include="GVLs" />
+    <Folder Include="VISUs" />
+    <Folder Include="POUs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderReference Include="Tc2_Standard">
+      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Standard</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_System">
+      <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_System</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Utilities">
+      <DefaultResolution>Tc2_Utilities, * (Beckhoff Automation GmbH)</DefaultResolution>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_Module">
+      <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_Module</Namespace>
+    </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SubObject Include="FB_TcBSD_Sendmail.AddressBCC" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressBCC.Set" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressCC" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressCC.Set" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressFROM" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressFROM.Set" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressTO" />
+    <SubObject Include="FB_TcBSD_Sendmail.AddressTO.Set" />
+    <SubObject Include="FB_TcBSD_Sendmail.BuildCommand" />
+    <SubObject Include="FB_TcBSD_Sendmail.Cyclic" />
+    <SubObject Include="FB_TcBSD_Sendmail.Execute" />
+    <SubObject Include="FB_TcBSD_Sendmail.MailMessage" />
+    <SubObject Include="FB_TcBSD_Sendmail.MailMessage.Set" />
+    <SubObject Include="FB_TcBSD_Sendmail.MailSubject" />
+    <SubObject Include="FB_TcBSD_Sendmail.MailSubject.Set" />
+    <SubObject Include="FB_TcBSD_Sendmail.SendCommand" />
+    <SubObject Include="FB_TcBSD_Sendmail.SendCommand.Get" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PLC.tmc">
+      <SubType>Content</SubType>
+    </None>
+  </ItemGroup>
+  <ProjectExtensions>
+    <PlcProjectOptions>
+      <XmlArchive>
+  <Data>
+    <o xml:space="preserve" t="OptionKey">
+      <v n="Name">"&lt;ProjectRoot&gt;"</v>
+      <d n="SubKeys" t="Hashtable" />
+      <d n="Values" t="Hashtable" />
+    </o>
+  </Data>
+  <TypeList>
+    <Type n="Hashtable">System.Collections.Hashtable</Type>
+    <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+    <Type n="String">System.String</Type>
+  </TypeList>
+</XmlArchive>
+    </PlcProjectOptions>
+  </ProjectExtensions>
+</Project>

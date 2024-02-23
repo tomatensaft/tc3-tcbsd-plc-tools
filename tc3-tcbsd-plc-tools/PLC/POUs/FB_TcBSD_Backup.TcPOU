@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TcBSD_Backup" Id="{a42133b4-5218-4b11-84a7-7021528c6850}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TcBSD_Backup
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+//SMTP Sendmail
+	fbTcBackup:NT_StartProcess;			//SytemBackup
+	
+//Mail Sendstring
+	sCommand:STRING(512);				//Command
+	
+//Execute
+	bProcessExecute:BOOL;				//Process Execute
+	bProcessActive:BOOL;				//Process Active
+	bProcessBusy:BOOL;					//Process Busy
+	bProcessError:BOOL;					//Process Error
+	
+//Bacup Parameter
+	sBackupDisk:STRING;					//Backup Disk
+	sBackupName:STRING;					//Backup Name
+	sBackupFolder:STRING;				//backup Folder
+	
+//Status & Helper
+	tonExecuteReset: TON;				//Timer Execute Reset
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <CFC>
+        <XmlArchive>
+          <Data>
+            <o xml:space="preserve" t="CFCImplementationObject">
+              <o n="Items" t="CFCItemList">
+                <l2 n="InnerList" />
+              </o>
+              <n n="ParameterInitializationMethodGenerator" />
+              <o n="RoutingPathTable" t="CFCRoutingPathTable">
+                <d2 n="InnerDictionary" />
+              </o>
+              <v n="AutoSizeCanvas">true</v>
+              <v n="CanvasWidth">0</v>
+              <v n="CanvasHeight">0</v>
+            </o>
+          </Data>
+          <TypeList>
+            <Type n="Boolean">System.Boolean</Type>
+            <Type n="CFCImplementationObject">{32d3375e-c010-41e2-9e43-b2fbf4f2b374}</Type>
+            <Type n="CFCItemList">{cd57ba20-558b-4b98-96c1-73c6000c3087}</Type>
+            <Type n="CFCRoutingPathTable">{4b8bcc79-5980-4868-b49e-005a8148859b}</Type>
+            <Type n="Int32">System.Int32</Type>
+          </TypeList>
+        </XmlArchive>
+      </CFC>
+    </Implementation>
+    <Property Name="BackupDisk" Id="{85993fb2-d085-4c48-a11f-8bec90b32b56}">
+      <Declaration><![CDATA[PROPERTY BackupDisk : STRING]]></Declaration>
+      <Set Name="Set" Id="{2435e079-ea52-4947-a5ea-e86e8f161f25}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sBackupDisk:=BackupDisk;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="BackupFolder" Id="{db37a17d-f742-4081-bce6-afb74dbfc25e}">
+      <Declaration><![CDATA[PROPERTY BackupFolder : STRING]]></Declaration>
+      <Set Name="Set" Id="{6bdcb3a1-7831-42d3-9fd6-950ab6d6cda0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sBackupFolder:=BackupFolder;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="BackupName" Id="{ef5f9fd3-1283-4080-b1dd-9e71a7e5e190}">
+      <Declaration><![CDATA[PROPERTY BackupName : STRING]]></Declaration>
+      <Set Name="Set" Id="{5a6e5f18-096c-4a70-804b-3dc0316265b7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sBackupName:=BackupName;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="BuildCommand" Id="{9284c032-7138-4c10-b52e-66008292f816}">
+      <Declaration><![CDATA[METHOD BuildCommand : INT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Build Commans
+sCommand:= '"TcBackup.sh --disk ';
+sCommand:=CONCAT(sCommand, sBackupDisk);
+sCommand:=CONCAT(sCommand, ' > ');
+sCommand:=CONCAT(sCommand, sBackupFolder);
+sCommand:=CONCAT(sCommand, '/');
+sCommand:=CONCAT(sCommand, sBackupName);
+sCommand:=CONCAT(sCommand, '.tcbkp00');
+sCommand:=CONCAT(sCommand, '"');
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Cyclic" Id="{b45cbff1-d2d2-496d-ae8c-f1b35ca7a815}">
+      <Declaration><![CDATA[METHOD Cyclic : INT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(*
+
+--Call Cyclic
+
+*)
+
+BuildCommand();
+
+//Send Mail
+fbTcBackup(
+	NETID:= '', 
+	PATHSTR:='/bin/sh -c' , 
+	DIRNAME:='/bin' , 
+	COMNDLINE:=sCommand , 
+	START:=bProcessActive, 
+	TMOUT:= , 
+	BUSY=> , 
+	ERR=> , 
+	ERRID=> );
+
+//Send Execute Reset		
+tonExecuteReset(IN:=bProcessExecute=FALSE AND bProcessActive=TRUE , PT:=T#5S);
+IF tonExecuteReset.Q THEN
+	bProcessActive:=FALSE;
+END_IF
+bProcessExecute:=FALSE;
+
+//Status Signals
+bProcessBusy:=bProcessActive;
+IF bProcessActive AND fbTcBackup.ERR THEN
+	bProcessError:=TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Execute" Id="{e3fe95f1-6a65-40a0-a1ad-8ff80552c941}">
+      <Declaration><![CDATA[METHOD Execute : INT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Execute
+
+//Build Build Command
+BuildCommand();
+
+//Flag Securtiy
+if bProcessExecute=false then
+	bProcessActive:=TRUE;
+	bProcessError:=FALSE;
+END_IF
+bProcessExecute:=TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_TcBSD_Backup.BackupDisk.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Backup.BackupFolder.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Backup.BackupName.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Backup.BuildCommand">
+      <LineId Id="6" Count="1" />
+      <LineId Id="9" Count="1" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Backup.Cyclic">
+      <LineId Id="6" Count="4" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="11" Count="23" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Backup.Execute">
+      <LineId Id="6" Count="10" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

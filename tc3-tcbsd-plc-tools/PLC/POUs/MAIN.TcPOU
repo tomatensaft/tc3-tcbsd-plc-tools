@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{509c3b17-7422-406f-90f2-a1ab4886c177}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	
+
+//runtime counter
+	iCounter:INT;
+	
+//system functions	
+	fbTcBSD_System:FB_TcBSD_System;
+
+//create backup
+	fbTcBSD_Backup:FB_TcBSD_Backup;
+	bTestBackup: BOOL;
+
+//sendmail
+	fbTcBSD_Sendmail:FB_TcBSD_Sendmail;
+
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+
+-TcBSD plc tools
+-permit line for Administrator -> "/usr/local/etc/doas.conf "permit nopass Administrator"
+
+
+*)
+
+//runtime control
+iCounter := iCounter +1;
+
+
+//backup
+fbTcBSD_Backup.BackupDisk:='/dev/ada0';
+fbTcBSD_Backup.BackupFolder:='/home/Administrator';
+fbTcBSD_Backup.BackupName:='Backup_of_today';
+fbTcBSD_Backup.Cyclic();
+IF bTestBackup THEN
+	bTestBackup:=FALSE;
+	fbTcBSD_Backup.Execute();
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="23" Count="19" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

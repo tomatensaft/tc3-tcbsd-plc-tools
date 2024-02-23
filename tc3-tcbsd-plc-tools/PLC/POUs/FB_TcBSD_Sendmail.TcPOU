@@ -1,0 +1,256 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TcBSD_Sendmail" Id="{5981f3e6-1b40-4ab6-b64e-0c06599d6540}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TcBSD_Sendmail
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+//SMTP Sendmail
+	fbMailSend:NT_StartProcess;			//Send Mail
+	
+//Mail Sendstring
+	sCommand:STRING(512);			//Send Command
+	
+//Execute Send
+	bProcessExecute:BOOL;					//Send Execute
+	bProcessActive:BOOL;					//Send Active
+	bProcessBusy:BOOL;						//Send Busy
+	bProcessError:BOOL;					//Send Error
+	
+//Mail Parameter
+	sAddressTO:STRING;					//Mail TO
+	sAddressFROM:STRING;				//Mail FROM
+	sAddressCC:STRING;					//Mail CC
+	sAddressBCC:STRING;					//Mail BCC
+	sMailMessage:STRING(255);			//Mail Message
+	sMailSubject:STRING;				//Mail Subject
+	
+//Status & Helper
+	tonExecuteReset: TON;				//Timer Execute Reset
+		
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+
+-Send Mail with /usr/bin/mail
+-Installed ssmtp package required
+-v0.1
+
+*)
+
+]]></ST>
+    </Implementation>
+    <Property Name="AddressBCC" Id="{fd6b1475-6a8d-4b95-9e00-b18ae9fe83cb}">
+      <Declaration><![CDATA[PROPERTY AddressBCC : STRING]]></Declaration>
+      <Set Name="Set" Id="{c9874781-8fc7-45bb-a89e-2b900cccfdbd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sAddressBCC:=AddressBCC;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="AddressCC" Id="{26955842-6288-432a-a9bb-343ef410393a}">
+      <Declaration><![CDATA[PROPERTY AddressCC : STRING]]></Declaration>
+      <Set Name="Set" Id="{a742275a-a64a-4feb-a970-4caad40b24c5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sAddressCC:=AddressCC;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="AddressFROM" Id="{a1fc6a04-97af-4fb9-acb1-cceaa5def81a}">
+      <Declaration><![CDATA[PROPERTY AddressFROM : STRING]]></Declaration>
+      <Set Name="Set" Id="{921b768a-c29f-4c04-a43b-c56632cdc521}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sAddressFROM := AddressFROM;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="AddressTO" Id="{dfece2c1-9200-4dd8-a86a-749a3ed46bdf}">
+      <Declaration><![CDATA[PROPERTY AddressTO : STRING]]></Declaration>
+      <Set Name="Set" Id="{7d829ad5-f517-45bf-abd0-c16f49eee572}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sAddressTO := AddressTO;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="BuildCommand" Id="{41084b91-bdc1-4f00-a69f-c784fcee5b00}">
+      <Declaration><![CDATA[METHOD PRIVATE BuildCommand : INT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Build Sendstring
+sCommand:= '"echo -e ';
+sCommand:=CONCAT(sCommand, '\"');
+sCommand:=CONCAT(sCommand, sMailMessage);
+sCommand:=CONCAT(sCommand, '\"');
+sCommand:=CONCAT(sCommand, ' | ');
+sCommand:=CONCAT(sCommand, 'mail -s ');
+sCommand:=CONCAT(sCommand, '\"');
+sCommand:=CONCAT(sCommand, sMailSubject);
+sCommand:=CONCAT(sCommand, '\"');
+sCommand:=CONCAT(sCommand, ' ');
+sCommand:=CONCAT(sCommand, sAddressTO);
+IF sAddressCC <> '' THEN
+	sCommand:=CONCAT(sCommand, ' -c ');
+	sCommand:=CONCAT(sCommand, sAddressCC);
+END_IF
+IF sAddressBCC <> '' THEN
+	sCommand:=CONCAT(sCommand, ' -b ');
+	sCommand:=CONCAT(sCommand, sAddressBCC);
+END_IF
+sCommand:=CONCAT(sCommand, ' -F');
+sCommand:=CONCAT(sCommand, '\"');
+sCommand:=CONCAT(sCommand, sAddressFROM);
+sCommand:=CONCAT(sCommand, '\"');
+sCommand:=CONCAT(sCommand, '"');]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Cyclic" Id="{2847d448-3c51-4961-b3af-fa158c7b4b6b}">
+      <Declaration><![CDATA[METHOD Cyclic : INT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(*
+
+--Call Cyclic
+
+*)
+
+//Send Mail
+fbMailSend(
+	NETID:= '', 
+	PATHSTR:='/bin/sh -c' , 
+	DIRNAME:='/bin' , 
+	COMNDLINE:=sCommand , 
+	START:=bProcessActive, 
+	TMOUT:= , 
+	BUSY=> , 
+	ERR=> , 
+	ERRID=> );
+
+//Send Execute Reset		
+tonExecuteReset(IN:=bProcessExecute=FALSE AND bProcessActive=TRUE , PT:=T#5S);
+IF tonExecuteReset.Q THEN
+	bProcessActive:=FALSE;
+END_IF
+bProcessExecute:=FALSE;
+
+//Status Signals
+bProcessBusy:=bProcessActive;
+IF bProcessActive AND fbMailSend.ERR THEN
+	bProcessError:=TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Execute" Id="{bc93429f-fb74-46ec-ac1f-44d9099960bb}">
+      <Declaration><![CDATA[METHOD PUBLIC Execute : INT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Send Mail
+
+//Build Sendstring
+BuildCommand();
+
+//Flag Securtiy
+if bProcessExecute=false then
+	bProcessActive:=TRUE;
+	bProcessError:=FALSE;
+END_IF
+bProcessExecute:=TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="MailMessage" Id="{0f383fe0-337d-46ac-8ef7-894a4a60962d}">
+      <Declaration><![CDATA[PROPERTY MailMessage : STRING (255)]]></Declaration>
+      <Set Name="Set" Id="{72348338-a4bf-48a5-9eac-954ebcb752d0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sMailMessage:=MailMEssage;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MailSubject" Id="{4332c76f-788f-4e8c-962e-900c98b5af72}">
+      <Declaration><![CDATA[PROPERTY MailSubject : STRING]]></Declaration>
+      <Set Name="Set" Id="{60e9fb6e-23f5-41fd-9a91-9407ed05b982}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sMailSubject:=MailSubject;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="SendCommand" Id="{c6b87f4b-d6e9-4c36-a5d3-3303a34998d0}">
+      <Declaration><![CDATA[PROPERTY SendCommand : STRING(255)]]></Declaration>
+      <Get Name="Get" Id="{a19136b8-7443-4464-905e-6ff259b3f968}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SendCommand:=sCommand;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_TcBSD_Sendmail">
+      <LineId Id="3" Count="7" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.AddressBCC.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.AddressCC.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.AddressFROM.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.AddressTO.Set">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.BuildCommand">
+      <LineId Id="3" Count="23" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.Cyclic">
+      <LineId Id="3" Count="28" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.Execute">
+      <LineId Id="3" Count="10" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.MailMessage.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.MailSubject.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcBSD_Sendmail.SendCommand.Get">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
